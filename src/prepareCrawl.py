@@ -4,15 +4,17 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.webdriver import WebDriver as FirefoxWebDriver
 import selenium.common.exceptions
 
+import sys
+
 # Logging
 import logging
 logging.basicConfig(
     encoding='utf-8', 
     level=logging.INFO, 
-    filename = 'log.txt',
-    filemode='a',
-    format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
-    datefmt='%H:%M:%S')
+    format='%(asctime)s %(name)s %(levelname)s %(message)s',
+    datefmt='%Y/%m/%d %H:%M:%S',
+    handlers=[logging.FileHandler("log.txt", mode = 'a'), logging.StreamHandler(sys.stdout)]
+)
 logger = logging.getLogger()
 
 # Utils
@@ -93,8 +95,11 @@ class PrepareCrawl():
 
         height = 1500
         driver.execute_script(f"window.scrollTo(0, {height})")
-        servingsLink = driver.find_element(By.XPATH, '//*[@class="wprm-recipe-block-container wprm-recipe-block-container-inline wprm-block-text-normal wprm-recipe-servings-container"]')
-
+        try:        
+            recipe['Servings'] = driver.find_element(By.XPATH, '//*[@class="wprm-recipe-servings wprm-recipe-details wprm-recipe-servings-532791 wprm-recipe-servings-adjustable-tooltip wprm-block-text-normal"]').text
+        except selenium.common.exceptions.NoSuchElementException:
+            pass
+        
         logger.info('Servings extracted')
         
         #########################################
@@ -102,8 +107,16 @@ class PrepareCrawl():
         #########################################
         
         cookingTime = driver.find_element(By.CLASS_NAME, 'wprm-recipe-time')
-        cookingTimeHours =   cookingTime.find_element(By.XPATH, '//*[@class="wprm-recipe-details wprm-recipe-details-hours wprm-recipe-total_time wprm-recipe-total_time-hours"]').text.replace('\n',' ')
-        cookingTimeMinutes = cookingTime.find_element(By.XPATH, '//*[@class="wprm-recipe-details wprm-recipe-details-minutes wprm-recipe-total_time wprm-recipe-total_time-minutes"]').text.replace('\n',' ')
+        try:        
+            cookingTimeHours = cookingTime.find_element(By.XPATH, '//*[@class="wprm-recipe-details wprm-recipe-details-hours wprm-recipe-total_time wprm-recipe-total_time-hours"]').text.replace('\n',' ')
+        except selenium.common.exceptions.NoSuchElementException:
+            pass
+
+        try:        
+            cookingTimeMinutes = cookingTime.find_element(By.XPATH, '//*[@class="wprm-recipe-details wprm-recipe-details-minutes wprm-recipe-total_time wprm-recipe-total_time-minutes"]').text.replace('\n',' ')
+        except selenium.common.exceptions.NoSuchElementException:
+            cookingTimeMinutes = ''
+
         
         recipe['Time'] = f'{cookingTimeHours} {cookingTimeMinutes}'
         logger.info('Cooking time extracted')
@@ -115,7 +128,7 @@ class PrepareCrawl():
         Ingredients = []
         # First one must loop over all the different groups
         for ingredientGroup in driver.find_elements(By.CLASS_NAME, 'wprm-recipe-ingredient-group'):
-            ingredientGroupDict ={}
+            ingredientGroupDict = {}
             try:
                 # If there is more than one group, here we get its title
                 title = ingredientGroup.find_element(By.TAG_NAME, 'h4').text
@@ -195,6 +208,10 @@ class PrepareCrawl():
         #########################################
         
         # Finally, the recipe recommendations
-        recipe['Recommendations'] = driver.find_element(By.CLASS_NAME, 'wprm-recipe-notes').text.replace('\n',' ')
         
+        try:
+            recipe['Recommendations'] = driver.find_element(By.CLASS_NAME, 'wprm-recipe-notes').text.replace('\n',' ')
+        except selenium.common.exceptions.NoSuchAttributeException:
+            pass
+            
         return recipe

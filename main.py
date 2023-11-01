@@ -7,20 +7,19 @@ import selenium.common.exceptions
 # Utils
 from src.prepareCrawl import PrepareCrawl
 from src.database import Database
+import time
+import sys
 
 # Logging
 import logging
 logging.basicConfig(
     encoding='utf-8', 
     level=logging.INFO, 
-    filename = 'log.txt',
-    filemode='a',
     format='%(asctime)s %(name)s %(levelname)s %(message)s',
-    datefmt='%Y/%m/%d %H:%M:%S')
+    datefmt='%Y/%m/%d %H:%M:%S',
+    handlers=[logging.FileHandler("log.txt", mode = 'a'), logging.StreamHandler(sys.stdout)]
+)
 logger = logging.getLogger()
-
-# Other utils
-import time
 
 # Selenium setup
 mainUrl = 'https://www.crockpotting.es/indice/'
