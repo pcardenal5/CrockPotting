@@ -25,7 +25,7 @@ I will be extracting and storing the following information from every recipe lin
 
 - Name
 - Url
-- Portions
+- Servings
 - Time
 - Ingredients
 - Steps
@@ -38,7 +38,7 @@ TinyDb uses JSON files to store the data. Using the previous list, each element 
     "recipeId": 0,
     "Name": "recipeName",
     "Link": "recipeLink",
-    "Portions" : 0,
+    "Servings" : 0,
     "Time": "recipeTime",
     "Ingredients": {
         "ingredientGroupName1" : [

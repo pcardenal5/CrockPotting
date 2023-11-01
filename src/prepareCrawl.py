@@ -6,32 +6,36 @@ import selenium.common.exceptions
 
 # Logging
 import logging
-logging.basicConfig(encoding='utf-8', level=logging.INFO)
+logging.basicConfig(
+    encoding='utf-8', 
+    level=logging.INFO, 
+    filename = 'log.txt',
+    filemode='a',
+    format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+    datefmt='%H:%M:%S')
+logger = logging.getLogger()
 
 # Utils
 import time
 
 class PrepareCrawl():
     
-    def __init__(self, driver: FirefoxWebDriver, mainUrl: str) -> None:
-        self.driver = driver
+    def __init__(self, mainUrl: str) -> None:
         self.mainUrl = mainUrl
         
-    def getUrls(self) -> list:
+    def getUrls(self, driver: FirefoxWebDriver) -> list:
         '''
             Exports all URLs and recipe names
-        '''
+        '''     
         
-        driver = self.driver        
-        
-        logging.info('Loading main page')
+        logger.info('Loading main page')
         driver.get(self.mainUrl)
         time.sleep(5)
 
         try:
             acceptCookiesButton = driver.find_element(By.XPATH, '/html/body/div[1]/div/div/div/div[2]/div/button[2]')
             acceptCookiesButton.click()
-            logging.info('Cookies warning removed')
+            logger.info('Cookies warning removed')
         except:
             pass
 
@@ -57,41 +61,41 @@ class PrepareCrawl():
                             recipes.append({'recipeId' : recipeId, 'Name' : recipeName, 'Link' : recipeLink})
 
                     except:
-                        logging.warning(f'No link found for {recipeName}')
+                        logger.warning(f'No link found for {recipeName}')
                         
                 except:
                     pass
       
         return recipes
 
-    def getData(self, recipe: dict) -> dict:
+    def getData(self, driver: FirefoxWebDriver, recipe: dict) -> dict:
         '''
             Given an element of the database, extracts the ingredients, productions and recommendations.
         '''
         url = recipe['Link']
-        driver = self.driver
         driver.get(url)
-        logging.info('Main link extracted')
-        time.sleep(10)
+        logger.info('Main link extracted')
+        logger.info(f'Link searched : {url}')
+        
+        time.sleep(5)
         
         
         try:
             acceptCookiesButton = driver.find_element(By.XPATH, '/html/body/div[1]/div/div/div/div[2]/div/button[2]')
             acceptCookiesButton.click()
-            logging.info('Cookies warning removed')
+            logger.info('Cookies warning removed')
         except:
             pass
         
         #########################################
-        #                Portions               #
+        #                Servings               #
         #########################################
 
         height = 1500
         driver.execute_script(f"window.scrollTo(0, {height})")
-        servingsLink = driver.find_element(By.CLASS_NAME, 'wprm-recipe-servings-link')
-        recipe['Portions'] = servingsLink.find_element(By.TAG_NAME, 'span').text
+        servingsLink = driver.find_element(By.XPATH, '//*[@class="wprm-recipe-block-container wprm-recipe-block-container-inline wprm-block-text-normal wprm-recipe-servings-container"]')
 
-        logging.info('Recipe portions extracted')
+        logger.info('Servings extracted')
         
         #########################################
         #              Cooking time             #
@@ -102,7 +106,7 @@ class PrepareCrawl():
         cookingTimeMinutes = cookingTime.find_element(By.XPATH, '//*[@class="wprm-recipe-details wprm-recipe-details-minutes wprm-recipe-total_time wprm-recipe-total_time-minutes"]').text.replace('\n',' ')
         
         recipe['Time'] = f'{cookingTimeHours} {cookingTimeMinutes}'
-        logging.info('Cooking time extracted')
+        logger.info('Cooking time extracted')
         
         #########################################
         #              Ingredients              #
@@ -131,19 +135,19 @@ class PrepareCrawl():
                 try:
                     ingredientDict['amount'] = ingredient.find_element(By.CLASS_NAME, 'wprm-recipe-ingredient-amount').text
                 except selenium.common.exceptions.NoSuchElementException:
-                    ingredientDict['amount'] = ''
+                    pass
                 
                 # Sometimes there are no units (1 clove of garlic)
                 try:
                     ingredientDict['unit'] = ingredient.find_element(By.CLASS_NAME, 'wprm-recipe-ingredient-unit').text
                 except selenium.common.exceptions.NoSuchElementException:
-                    ingredientDict['unit'] = ''
+                    pass
 
                 # Sometimes there are notes
                 try:
                     ingredientDict['notes'] = ingredient.find_element(By.CSS_SELECTOR, '.wprm-recipe-ingredient-notes.wprm-recipe-ingredient-notes-normal').text
                 except selenium.common.exceptions.NoSuchElementException:
-                    ingredientDict['notes'] = ''
+                    pass
                 
                 
                 
@@ -155,7 +159,7 @@ class PrepareCrawl():
             
         # Finally, one can add the ingredients to the recipe
         recipe['Ingredients'] = Ingredients
-        logging.info('Ingredients extracted')
+        logger.info('Ingredients extracted')
         
         #########################################
         #                 Steps                 #
@@ -163,8 +167,9 @@ class PrepareCrawl():
         
         # The process to get the steps is quite similar to the ingredients. In this case, we will not need to use 
         # dicts to store the data as the steps will be simply strings.
+        Steps = []
         for stepGroup in driver.find_elements(By.CLASS_NAME, 'wprm-recipe-instruction-group'):
-            # Each stepList 
+
             stepGroupDict ={}
             try:
                 # If there is more than one group, here we get its title
@@ -172,6 +177,24 @@ class PrepareCrawl():
                 title = title.split(' ')[-1].title()
             except:
                 title = 'Elaboración'
+
+            stepList = []
+            for step in stepGroup.find_elements(By.TAG_NAME, 'li'):
+                step = step.find_element(By.CLASS_NAME, 'wprm-recipe-instruction-text').text
+                stepList.append(step)
             
+            stepGroupDict[title] = stepList
+            
+            Steps.append(stepGroupDict)
+                 
+        recipe['Steps'] = Steps
+        
+        
+        #########################################
+        #            Recommendations            #
+        #########################################
+        
+        # Finally, the recipe recommendations
+        recipe['Recommendations'] = driver.find_element(By.CLASS_NAME, 'wprm-recipe-notes').text.replace('\n',' ')
         
         return recipe
