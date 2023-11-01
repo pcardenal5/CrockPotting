@@ -1,37 +1,58 @@
-# Database to store data
-from tinydb import TinyDB, Query
 
 # Selenium, to get and crawl the URLs
-from selenium.webdriver.common.by import By
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.firefox.service import Service
 
-# Get crawleable urls
-from src.prepareCrawl import prepareCrawl
+# Utils
+from src.prepareCrawl import PrepareCrawl
+from src.database import Database
+
+# Logging
+import logging
+logging.basicConfig(encoding='utf-8', level=logging.INFO)
+
 
 # Other utils
 import time
 
-
-
-
 # Selenium setup
 mainUrl = 'https://www.crockpotting.es/indice/'
-driverpath = 'D:/R/Utils/Webdriver/Firefox/geckodriver.exe'
+driverpath = './geckodriver.exe'
 s = Service(driverpath)
 driver = webdriver.Firefox(service=s)
-print('Selenium has been set up')
+logging.info('Selenium has been set up')
+
+getUrls = False
+updateDatabase = False
+crawllAll = False
+
+###########################################
+#           Instantiate Classes           #
+###########################################
+
+pC = PrepareCrawl(driver, mainUrl)
+db = Database(dbPath = './db/tiny.json')
+
 
 ###########################################
 #              Prepare crawl              #
 ###########################################
 
-pC = prepareCrawl(driver = driver, dbPath = './db/tiny.json', mainUrl = mainUrl)
+if (getUrls):
+    logging.info('Extracting URLs')
+    recipeList = pC.getUrls()
 
-recipeDict = pC.getUrls()
-print(recipeDict)
+if (updateDatabase):
+    logging.info('Updating database')
+    db.update(recipeList)
 
-TinyDB('./db/tiny.json').insert(recipeDict)
+urlTable = db.database.table('urls')
+crawledURLs = urlTable.all()
+test = crawledURLs[10]
+test = pC.getData(test)    
+print(test)
 
-
-driver.close()
+if (crawllAll):
+    for recipe in crawledURLs:
+        recipeEnriched = pC.getData(recipe)    
+        time.sleep(5)
