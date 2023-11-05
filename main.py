@@ -29,7 +29,7 @@ driver = webdriver.Firefox(service=s)
 logger.info('Selenium has been set up')
 
 # Settings to change the behaviour of the script
-getUrls = False
+getUrls = True
 crawllAll = True
 
 
@@ -59,15 +59,21 @@ if (getUrls):
 if (crawllAll):
     preCrawledURLs = db.database.table('urls').all()
     crawledURLs = []
+    counter = 0
     for recipe in preCrawledURLs:
         try:
             recipeEnriched = pC.getData(driver, recipe)    
+            recipeEnriched['crawled'] = True
             crawledURLs.append(recipeEnriched)
             logger.info('Crawl complete.')
         except selenium.common.exceptions.NoSuchElementException as e:
             logger.warning('Could not crawl given url.')
             logger.warning(f'{e}')
         time.sleep(5)
+        counter += 1
+        if counter % 20 == 0:
+            db.update(crawledURLs)
+            logger.info('Updating database.')
+            crawledURLs = []
     db.update(crawledURLs)
-
 driver.close()

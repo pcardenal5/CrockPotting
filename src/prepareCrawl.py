@@ -60,7 +60,7 @@ class PrepareCrawl():
                         recipeId = abs(hash(recipeLink))
                         
                         if (not recipeLink.endswith('/#azindex-1')):
-                            recipes.append({'recipeId' : recipeId, 'Name' : recipeName, 'Link' : recipeLink})
+                            recipes.append({'recipeId' : recipeId, 'Name' : recipeName, 'Link' : recipeLink, 'crawled' : False})
 
                     except:
                         logger.warning(f'No link found for {recipeName}')
@@ -105,20 +105,24 @@ class PrepareCrawl():
         #########################################
         #              Cooking time             #
         #########################################
-        
-        cookingTime = driver.find_element(By.CLASS_NAME, 'wprm-recipe-time')
-        try:        
-            cookingTimeHours = cookingTime.find_element(By.XPATH, '//*[@class="wprm-recipe-details wprm-recipe-details-hours wprm-recipe-total_time wprm-recipe-total_time-hours"]').text.replace('\n',' ')
-        except selenium.common.exceptions.NoSuchElementException:
-            pass
+        try:
+            cookingTime = driver.find_element(By.CLASS_NAME, 'wprm-recipe-time')
+            
+            try:        
+                cookingTimeHours = cookingTime.find_element(By.XPATH, '//*[@class="wprm-recipe-details wprm-recipe-details-hours wprm-recipe-total_time wprm-recipe-total_time-hours"]').text.replace('\n',' ')
+            except selenium.common.exceptions.NoSuchElementException:
+                cookingTimeHours = ''
 
-        try:        
-            cookingTimeMinutes = cookingTime.find_element(By.XPATH, '//*[@class="wprm-recipe-details wprm-recipe-details-minutes wprm-recipe-total_time wprm-recipe-total_time-minutes"]').text.replace('\n',' ')
-        except selenium.common.exceptions.NoSuchElementException:
-            cookingTimeMinutes = ''
-
+            try:        
+                cookingTimeMinutes = cookingTime.find_element(By.XPATH, '//*[@class="wprm-recipe-details wprm-recipe-details-minutes wprm-recipe-total_time wprm-recipe-total_time-minutes"]').text.replace('\n',' ')
+            except selenium.common.exceptions.NoSuchElementException:
+                cookingTimeMinutes = ''
+                
+            recipe['Time'] = f'{cookingTimeHours} {cookingTimeMinutes}'
         
-        recipe['Time'] = f'{cookingTimeHours} {cookingTimeMinutes}'
+        except:
+            recipe['Time'] = ''
+            
         logger.info('Cooking time extracted')
         
         #########################################
@@ -201,6 +205,7 @@ class PrepareCrawl():
             Steps.append(stepGroupDict)
                  
         recipe['Steps'] = Steps
+        logger.info('Steps extracted')
         
         
         #########################################

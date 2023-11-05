@@ -12,8 +12,7 @@ and then create the virtual environment. The following command must be executed 
 ```
 Finally, once everything has been downloaded and installed one can simply execute
 ```
-    pipenv shell
-    python main.py
+    pipenv run python main.py
 ```
 ## Goals
 

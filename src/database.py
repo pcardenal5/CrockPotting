@@ -1,6 +1,6 @@
 
 # Database
-from tinydb import TinyDB
+from tinydb import TinyDB, Query
 
 class Database():
     
@@ -15,13 +15,18 @@ class Database():
         urlTable = self.database.table('urls')
 
         # Insert only new recepies
-        crawledURLs = [element['recipeId'] for element in urlTable.all()]
+        crawledURLs = [element['recipeId'] for element in urlTable.all() if element['crawled']]
         
         newRecipes = [recipe for recipe in recipeList if recipe['recipeId'] not in crawledURLs]
         
         if newRecipes != []:
-            urlTable.insert_multiple(recipeList)
-
+            try:
+                urlTable.insert_multiple(recipeList)
+            except ValueError:
+                urlTable.update_multiple(
+                    [(recipe, Query().recipeId == recipe['recipeId']) for recipe in recipeList]
+                )
+                
 # Testing the class
 if __name__ == '__main__':
     db = Database('../db/tiny.json')
