@@ -61,9 +61,7 @@ TinyDb uses JSON files to store the data. Using the previous list, each element 
 
 There are many things to optimize or try in this project:
 
-- Periodically save the data on disk. As of now, if the process is stopped all progress is lost. This can be solved using a simple condition to update the database every X recipes crawled. 
-
-- Try the `asyncio` library. The use of the library could masively speed up the process.
+- Try the `asyncio` library. The use of the library could massively speed up the process.
 
 - Paralelization. This could be achieved by setting a small API to handle the pending links and a couple of docker containers to do the crawling per-se. This would have the added benefit of scalability without actually having to do much work. However, one should handle this with care so as not to make too many request to the main page. 
 
