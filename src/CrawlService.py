@@ -66,6 +66,8 @@ class CrawlService():
             Given an element of the database, extracts the ingredients, productions and recommendations.
         '''
         url = recipe['Link']
+        if recipe['crawled']:
+            return
         driver.get(url)
         self.logs.sendInfo('Main link extracted')
         self.logs.sendInfo(f'Link searched : {url}')

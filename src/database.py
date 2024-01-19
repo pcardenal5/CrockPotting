@@ -35,3 +35,6 @@ class Database():
                 urlTable.update_multiple(
                     [(recipe, Query().recipeId == recipe['recipeId']) for recipe in recipeList]
                 )
+
+    def getUncrawled(self) -> dict:
+        return self.database.table('urls').search(Query()['crawled'] == False)

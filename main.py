@@ -56,14 +56,17 @@ if (CRAWL_ALL):
     counter = 0
     for recipe in preCrawledURLs:
         try:
-            recipeEnriched = crawlService.getData(driver, recipe)    
-            recipeEnriched['crawled'] = True
-            crawledURLs.append(recipeEnriched)
+            recipeEnriched = crawlService.getData(driver, recipe) 
+            if not recipeEnriched:
+                continue
             logs.sendInfo('Crawl complete.')
         except selenium.common.exceptions.NoSuchElementException as e:
             logs.sendWarning(f'Could not crawl given url: {e}')
+            recipeEnriched = recipe    
+        recipeEnriched['crawled'] = True
+        crawledURLs.append(recipeEnriched)
 
-        time.sleep(5)
+        time.sleep(1)
         counter += 1
         if counter % 20 == 0:
             db.update(crawledURLs)
