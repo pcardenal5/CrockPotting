@@ -1,43 +1,37 @@
-
 # Selenium, to get and crawl the URLs
 from selenium import webdriver
 from selenium.webdriver.firefox.service import Service
 import selenium.common.exceptions
 
 # Utils
-from src.prepareCrawl import PrepareCrawl
-from src.database import Database
-import time
-import sys
+from src.CrawlService import CrawlService
+from src.Database import Database
+from src.LogService import LogService
 
-# Logging
-import logging
-logging.basicConfig(
-    encoding='utf-8', 
-    level=logging.INFO, 
-    format='%(asctime)s %(name)s %(levelname)s %(message)s',
-    datefmt='%Y/%m/%d %H:%M:%S',
-    handlers=[logging.FileHandler("log.txt", mode = 'a'), logging.StreamHandler(sys.stdout)]
-)
-logger = logging.getLogger()
+import time
+import json
+
+logs = LogService()
 
 # Selenium setup
 mainUrl = 'https://www.crockpotting.es/indice/'
 driverpath = './geckodriver.exe'
 s = Service(driverpath)
 driver = webdriver.Firefox(service=s)
-logger.info('Selenium has been set up')
+logs.sendInfo('Selenium has been set up')
 
 # Settings to change the behaviour of the script
-getUrls = True
-crawllAll = True
+with open('./AppConfig.json') as inputFile:
+    config = json.load(inputFile)
+    GET_URLS = config['GET_URLS']
+    CRAWL_ALL = config['CRAWL_ALL']
 
 
 ###########################################
 #           Instantiate Classes           #
 ###########################################
 
-pC = PrepareCrawl(mainUrl)
+crawlService = CrawlService(mainUrl, logs)
 db = Database(dbPath = './db/tiny.json')
 
 
@@ -45,10 +39,10 @@ db = Database(dbPath = './db/tiny.json')
 #              Prepare crawl              #
 ###########################################
 
-if (getUrls):
-    logger.info('Extracting URLs')
-    recipeList = pC.getUrls(driver)
-    logger.info('Updating database')
+if (GET_URLS):
+    logs.sendInfo('Extracting URLs')
+    recipeList = crawlService.getUrls(driver)
+    logs.sendInfo('Updating database')
     db.update(recipeList)
 
 
@@ -56,24 +50,24 @@ if (getUrls):
 #              Execute crawl              #
 ###########################################
 
-if (crawllAll):
+if (CRAWL_ALL):
     preCrawledURLs = db.database.table('urls').all()
     crawledURLs = []
     counter = 0
     for recipe in preCrawledURLs:
         try:
-            recipeEnriched = pC.getData(driver, recipe)    
+            recipeEnriched = crawlService.getData(driver, recipe)    
             recipeEnriched['crawled'] = True
             crawledURLs.append(recipeEnriched)
-            logger.info('Crawl complete.')
+            logs.sendInfo('Crawl complete.')
         except selenium.common.exceptions.NoSuchElementException as e:
-            logger.warning('Could not crawl given url.')
-            logger.warning(f'{e}')
+            logs.sendWarning(f'Could not crawl given url: {e}')
+
         time.sleep(5)
         counter += 1
         if counter % 20 == 0:
             db.update(crawledURLs)
-            logger.info('Updating database.')
+            logs.sendInfo('Updating database.')
             crawledURLs = []
     db.update(crawledURLs)
 driver.close()

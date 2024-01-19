@@ -4,40 +4,31 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.webdriver import WebDriver as FirefoxWebDriver
 import selenium.common.exceptions
 
-import sys
-
 # Logging
-import logging
-logging.basicConfig(
-    encoding='utf-8', 
-    level=logging.INFO, 
-    format='%(asctime)s %(name)s %(levelname)s %(message)s',
-    datefmt='%Y/%m/%d %H:%M:%S',
-    handlers=[logging.FileHandler("log.txt", mode = 'a'), logging.StreamHandler(sys.stdout)]
-)
-logger = logging.getLogger()
+from src.LogService import LogService
 
 # Utils
 import time
 
-class PrepareCrawl():
+class CrawlService():
     
-    def __init__(self, mainUrl: str) -> None:
+    def __init__(self, mainUrl: str, logs: LogService) -> None:
         self.mainUrl = mainUrl
+        self.logs = logs
         
     def getUrls(self, driver: FirefoxWebDriver) -> list:
         '''
             Exports all URLs and recipe names
         '''     
         
-        logger.info('Loading main page')
+        self.logs.sendInfo('Loading main page')
         driver.get(self.mainUrl)
         time.sleep(5)
 
         try:
             acceptCookiesButton = driver.find_element(By.XPATH, '/html/body/div[1]/div/div/div/div[2]/div/button[2]')
             acceptCookiesButton.click()
-            logger.info('Cookies warning removed')
+            self.logs.sendInfo('Cookies warning removed')
         except:
             pass
 
@@ -63,7 +54,7 @@ class PrepareCrawl():
                             recipes.append({'recipeId' : recipeId, 'Name' : recipeName, 'Link' : recipeLink, 'crawled' : False})
 
                     except:
-                        logger.warning(f'No link found for {recipeName}')
+                        self.logs.sendWarning(f'No link found for {recipeName}')
                         
                 except:
                     pass
@@ -76,8 +67,8 @@ class PrepareCrawl():
         '''
         url = recipe['Link']
         driver.get(url)
-        logger.info('Main link extracted')
-        logger.info(f'Link searched : {url}')
+        self.logs.sendInfo('Main link extracted')
+        self.logs.sendInfo(f'Link searched : {url}')
         
         time.sleep(5)
         
@@ -85,7 +76,7 @@ class PrepareCrawl():
         try:
             acceptCookiesButton = driver.find_element(By.XPATH, '/html/body/div[1]/div/div/div/div[2]/div/button[2]')
             acceptCookiesButton.click()
-            logger.info('Cookies warning removed')
+            self.logs.sendInfo('Cookies warning removed')
         except:
             pass
         
@@ -100,7 +91,7 @@ class PrepareCrawl():
         except selenium.common.exceptions.NoSuchElementException:
             pass
         
-        logger.info('Servings extracted')
+        self.logs.sendInfo('Servings extracted')
         
         #########################################
         #              Cooking time             #
@@ -123,7 +114,7 @@ class PrepareCrawl():
         except:
             recipe['Time'] = ''
             
-        logger.info('Cooking time extracted')
+        self.logs.sendInfo('Cooking time extracted')
         
         #########################################
         #              Ingredients              #
@@ -176,7 +167,7 @@ class PrepareCrawl():
             
         # Finally, one can add the ingredients to the recipe
         recipe['Ingredients'] = Ingredients
-        logger.info('Ingredients extracted')
+        self.logs.sendInfo('Ingredients extracted')
         
         #########################################
         #                 Steps                 #
@@ -205,7 +196,7 @@ class PrepareCrawl():
             Steps.append(stepGroupDict)
                  
         recipe['Steps'] = Steps
-        logger.info('Steps extracted')
+        self.logs.sendInfo('Steps extracted')
         
         
         #########################################
