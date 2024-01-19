@@ -40,9 +40,9 @@ db = Database(dbPath = './db/tiny.json')
 ###########################################
 
 if (GET_URLS):
-    logs.sendInfo('Extracting URLs')
+    logs.sendInfo('Extracting URLs.')
     recipeList = crawlService.getUrls(driver)
-    logs.sendInfo('Updating database')
+    logs.sendInfo('Updating URL database.')
     db.update(recipeList)
 
 
@@ -59,9 +59,9 @@ if (CRAWL_ALL):
             recipeEnriched = crawlService.getData(driver, recipe) 
             if not recipeEnriched:
                 continue
-            logs.sendInfo('Crawl complete.')
         except selenium.common.exceptions.NoSuchElementException as e:
-            logs.sendWarning(f'Could not crawl given url: {e}')
+            e = str(e).replace("\\n", ' ')
+            logs.sendWarning(f'Could not crawl given url: {e}.')
             recipeEnriched = recipe    
         recipeEnriched['crawled'] = True
         crawledURLs.append(recipeEnriched)
@@ -70,7 +70,7 @@ if (CRAWL_ALL):
         counter += 1
         if counter % 20 == 0:
             db.update(crawledURLs)
-            logs.sendInfo('Updating database.')
+            logs.sendInfo('Updating recipes database.')
             crawledURLs = []
     db.update(crawledURLs)
 driver.close()

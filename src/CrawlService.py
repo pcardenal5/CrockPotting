@@ -69,7 +69,6 @@ class CrawlService():
         if recipe['crawled']:
             return
         driver.get(url)
-        self.logs.sendInfo('Main link extracted')
         self.logs.sendInfo(f'Link searched : {url}')
         
         time.sleep(5)
@@ -93,7 +92,6 @@ class CrawlService():
         except selenium.common.exceptions.NoSuchElementException:
             pass
         
-        self.logs.sendInfo('Servings extracted')
         
         #########################################
         #              Cooking time             #
@@ -116,7 +114,6 @@ class CrawlService():
         except:
             recipe['Time'] = ''
             
-        self.logs.sendInfo('Cooking time extracted')
         
         #########################################
         #              Ingredients              #
@@ -169,7 +166,6 @@ class CrawlService():
             
         # Finally, one can add the ingredients to the recipe
         recipe['Ingredients'] = Ingredients
-        self.logs.sendInfo('Ingredients extracted')
         
         #########################################
         #                 Steps                 #
@@ -198,7 +194,6 @@ class CrawlService():
             Steps.append(stepGroupDict)
                  
         recipe['Steps'] = Steps
-        self.logs.sendInfo('Steps extracted')
         
         
         #########################################
