@@ -1,3 +1,4 @@
+import os
 
 # Database
 from tinydb import TinyDB, Query
@@ -7,8 +8,16 @@ class Database():
     def __init__(self, dbPath : str) -> None:
         self.dbPath = dbPath
         
+        # Check if path to database file exists
+        if not os.path.exists('./db/'):
+            os.makedirs('./db/')
+        if not os.path.exists(self.dbPath):
+            with open(self.dbPath, 'w') as databaseFile:
+                databaseFile.write('')
+        
+        
     @property
-    def database(self) -> TinyDB:
+    def database(self) -> TinyDB:                
         return TinyDB(self.dbPath)
     
     def update(self, recipeList) -> None:
@@ -26,8 +35,3 @@ class Database():
                 urlTable.update_multiple(
                     [(recipe, Query().recipeId == recipe['recipeId']) for recipe in recipeList]
                 )
-                
-# Testing the class
-if __name__ == '__main__':
-    db = Database('../db/tiny.json')
-    print([recipe for recipe in db.database.table('urls')])
