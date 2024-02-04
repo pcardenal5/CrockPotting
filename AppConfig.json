@@ -1,4 +1,5 @@
 {
     "GET_URLS": true,
-    "CRAWL_ALL": true
+    "CRAWL_ALL": true,
+    "OUTPUT_PATH" : "D:/OneDrive/Documentos/Obsidian/Recetas/CrockPotting/"
 }
