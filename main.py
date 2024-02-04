@@ -5,7 +5,7 @@ import selenium.common.exceptions
 
 # Utils
 from src.CrawlService import CrawlService
-from src.Database import Database
+from src.DatabaseService import Database
 from src.LogService import LogService
 
 import time

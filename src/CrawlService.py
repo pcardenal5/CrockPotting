@@ -1,5 +1,4 @@
 # Selenium
-from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.webdriver import WebDriver as FirefoxWebDriver
 import selenium.common.exceptions
