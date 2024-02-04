@@ -8,6 +8,7 @@ from src.CrawlService import CrawlService
 from src.DatabaseService import Database
 from src.LogService import LogService
 
+from tqdm import tqdm
 import time
 import json
 
@@ -54,7 +55,8 @@ if (CRAWL_ALL):
     preCrawledURLs = db.database.table('urls').all()
     crawledURLs = []
     counter = 0
-    for recipe in preCrawledURLs:
+    for i in tqdm(range(len(preCrawledURLs))):
+        recipe = preCrawledURLs[i]
         try:
             recipeEnriched = crawlService.getData(driver, recipe) 
             if not recipeEnriched:

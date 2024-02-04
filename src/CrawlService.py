@@ -118,7 +118,7 @@ class CrawlService():
         #              Ingredients              #
         #########################################
         
-        Ingredients = []
+        Ingredients = {}
         # First one must loop over all the different groups
         for ingredientGroup in driver.find_elements(By.CLASS_NAME, 'wprm-recipe-ingredient-group'):
             ingredientGroupDict = {}
@@ -159,9 +159,7 @@ class CrawlService():
                 
                 ingredientList.append(ingredientDict)
             
-            ingredientGroupDict[title] = ingredientList
-            
-            Ingredients.append(ingredientGroupDict)
+            Ingredients[title] = ingredientList
             
         # Finally, one can add the ingredients to the recipe
         recipe['Ingredients'] = Ingredients
@@ -172,10 +170,9 @@ class CrawlService():
         
         # The process to get the steps is quite similar to the ingredients. In this case, we will not need to use 
         # dicts to store the data as the steps will be simply strings.
-        Steps = []
+        Steps = {}
         for stepGroup in driver.find_elements(By.CLASS_NAME, 'wprm-recipe-instruction-group'):
 
-            stepGroupDict ={}
             try:
                 # If there is more than one group, here we get its title
                 title = stepGroup.find_element(By.TAG_NAME, 'h4').text
@@ -188,9 +185,8 @@ class CrawlService():
                 step = step.find_element(By.CLASS_NAME, 'wprm-recipe-instruction-text').text
                 stepList.append(step)
             
-            stepGroupDict[title] = stepList
             
-            Steps.append(stepGroupDict)
+            Steps[title] = stepList
                  
         recipe['Steps'] = Steps
         

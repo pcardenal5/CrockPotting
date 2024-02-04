@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 selenium = "*"
 tinydb = "*"
+tqdm = "*"
 
 [dev-packages]
 

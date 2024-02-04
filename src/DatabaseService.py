@@ -5,7 +5,7 @@ from tinydb import TinyDB, Query
 
 class Database():
     
-    def __init__(self, dbPath : str) -> None:
+    def __init__(self, dbPath : str = './db/tiny.json') -> None:
         self.dbPath = dbPath
         
         # Check if path to database file exists
