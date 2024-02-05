@@ -1,7 +1,7 @@
 import os
 import json
-from tinydb import Query
 from tqdm import tqdm
+import re
 
 from src.DatabaseService import Database
 
@@ -21,15 +21,16 @@ if not os.path.exists(OUTPUT_PATH):
     os.makedirs(OUTPUT_PATH)
 
 db = Database()
-
 recipeDb = db.database.table('urls').all()
+
+
 # Loop through all the recipes 
 for i in tqdm(range(len(recipeDb))):
     recipe = recipeDb[i]
     # I will first build the text to write into the file and only then I will write it 
     recipeMarkdown = ''
     
-    # the format is kinda bad beacuse it will otherwise output a line break or tab
+    # Set recipe headers    
     recipeMarkdown += f'''# {recipe["Name"]}
 ---
 ## Información básica
@@ -47,11 +48,13 @@ for i in tqdm(range(len(recipeDb))):
             ingredientsText += f'### {ingredientName}\n'
         # ingredientGroup is an array of ingredients
         for ingredient in ingredientGroup:
+            # I use tryGet because the ingredients don't always have the same keys
             iName = tryGet(ingredient, 'name')
             iAmount = tryGet(ingredient, 'amount')
             iUnit = tryGet(ingredient, 'unit')
             iNotes = tryGet(ingredient, 'notes')
             ingredientsText += f'- {iAmount} {iUnit} {iName} ({iNotes})\n'
+        #There may be a fancier way to do this with reges, but couldn't get it to work
         ingredientsText = ingredientsText.replace('  ', ' ').replace('  ', ' ').replace('()','')
 
     # Add ingredient list
@@ -66,7 +69,7 @@ for i in tqdm(range(len(recipeDb))):
         
         if stepName != 'Elaboración':
             recipeMarkdown += f'### {stepName}\n'
-        # stepGroup is an array of Steps
+        # stepGroup is an array of Steps. Loop ober them and add to string
         c = 1
         for step in stepGroup:
             stepsText += f'{c}. {step}\n'
@@ -74,9 +77,8 @@ for i in tqdm(range(len(recipeDb))):
         stepsText = stepsText.replace('  ', ' ').replace('  ', ' ').replace('()','')
     recipeMarkdown += stepsText
 
-
-    rName = str(recipe['Name']).replace('|', '').replace('¿', '').replace('?','')
+    # Remove special characters from the name and save the file
+    rName = re.sub(r'\||\?|¿', '', recipe['Name'])
     recipePath = os.path.join(OUTPUT_PATH, rName)
     with open(recipePath +'.md', 'w', encoding = 'utf-8') as outputFile:
         outputFile.write(recipeMarkdown)
-
