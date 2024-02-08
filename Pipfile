@@ -7,6 +7,9 @@ name = "pypi"
 selenium = "*"
 tinydb = "*"
 tqdm = "*"
+bs4 = "*"
+asyncio = "*"
+aiohttp = "*"
 
 [dev-packages]
 
