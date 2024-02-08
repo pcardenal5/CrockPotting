@@ -40,6 +40,10 @@ for i in tqdm(range(len(recipeDb))):
 ## Ingredientes
 '''
     recipeIngredients = dict(recipe["Ingredients"])
+    # Skip iteration if there are no ingredients.
+    # That way I delete the links without recipes
+    if not recipeIngredients:
+        continue
     ingredientsText = ''
     for ingredientName in recipeIngredients.keys():
         ingredientGroup = recipeIngredients[ingredientName]
@@ -48,11 +52,10 @@ for i in tqdm(range(len(recipeDb))):
             ingredientsText += f'### {ingredientName}\n'
         # ingredientGroup is an array of ingredients
         for ingredient in ingredientGroup:
-            # I use tryGet because the ingredients don't always have the same keys
-            iName = tryGet(ingredient, 'name')
-            iAmount = tryGet(ingredient, 'amount')
-            iUnit = tryGet(ingredient, 'unit')
-            iNotes = tryGet(ingredient, 'notes')
+            iName = ingredient.get('name')
+            iAmount = ingredient.get('amount')
+            iUnit = ingredient.get('unit')
+            iNotes = ingredient.get('notes')
             ingredientsText += f'- {iAmount} {iUnit} {iName} ({iNotes})\n'
         #There may be a fancier way to do this with reges, but couldn't get it to work
         ingredientsText = ingredientsText.replace('  ', ' ').replace('  ', ' ').replace('()','')
@@ -61,14 +64,14 @@ for i in tqdm(range(len(recipeDb))):
     recipeMarkdown += ingredientsText
 
     # Add Steps 
-    recipeMarkdown += '## Elaboración\n'
+    recipeMarkdown += '---\n## Elaboración\n'
     recipeSteps = dict(recipe["Steps"])
     stepsText = ''
     for stepName in recipeSteps.keys():
         stepGroup = recipeSteps[stepName]
         
         if stepName != 'Elaboración':
-            recipeMarkdown += f'### {stepName}\n'
+            stepsText += f'### {stepName}\n'
         # stepGroup is an array of Steps. Loop ober them and add to string
         c = 1
         for step in stepGroup:
@@ -76,6 +79,9 @@ for i in tqdm(range(len(recipeDb))):
             c+=1
         stepsText = stepsText.replace('  ', ' ').replace('  ', ' ').replace('()','')
     recipeMarkdown += stepsText
+
+    # Include notes
+    recipeMarkdown +=f'---\n## Recomendaciones\n{recipe.get("Recommendations")}'
 
     # Remove special characters from the name and save the file
     rName = re.sub(r'\||\?|¿', '', recipe['Name'])
