@@ -57,8 +57,8 @@ for i in tqdm(range(len(recipeDb))):
             iUnit = ingredient.get('unit')
             iNotes = ingredient.get('notes')
             ingredientsText += f'- {iAmount} {iUnit} {iName} ({iNotes})\n'
-        #There may be a fancier way to do this with reges, but couldn't get it to work
-        ingredientsText = ingredientsText.replace('  ', ' ').replace('  ', ' ').replace('()','')
+        # There may be a fancier way to do this with regex, but couldn't get it to work
+        ingredientsText = ingredientsText.replace('None', '').replace('  ', ' ').replace('  ', ' ').replace('()','')
 
     # Add ingredient list
     recipeMarkdown += ingredientsText
