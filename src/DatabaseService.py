@@ -24,16 +24,16 @@ class Database():
         urlTable = self.database.table('urls')
 
         # Insert only new recepies
-        crawledURLs = [element['recipeId'] for element in urlTable.all() if element['crawled']]
+        crawledURLs = [element['Link'] for element in urlTable.all() if element['crawled']]
         
-        newRecipes = [recipe for recipe in recipeList if recipe['recipeId'] not in crawledURLs]
+        newRecipes = [recipe for recipe in recipeList if recipe['Link'] not in crawledURLs]
         
         if newRecipes != []:
             try:
                 urlTable.insert_multiple(recipeList)
             except ValueError:
                 urlTable.update_multiple(
-                    [(recipe, Query().recipeId == recipe['recipeId']) for recipe in recipeList]
+                    [(recipe, Query().Link == recipe['Link']) for recipe in recipeList]
                 )
 
     def getUncrawled(self) -> dict:

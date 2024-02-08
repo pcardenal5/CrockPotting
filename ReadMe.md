@@ -34,7 +34,6 @@ TinyDb uses JSON files to store the data. Using the previous list, each element 
 
 ```json
 {
-    "recipeId": 0,
     "Name": "recipeName",
     "Link": "recipeLink",
     "Servings" : 0,

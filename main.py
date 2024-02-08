@@ -1,7 +1,5 @@
-# Selenium, to get and crawl the URLs
-from selenium import webdriver
-from selenium.webdriver.firefox.service import Service
-import selenium.common.exceptions
+import asyncio
+import aiohttp
 
 # Utils
 from src.CrawlService import CrawlService
@@ -12,67 +10,75 @@ from tqdm import tqdm
 import time
 import json
 
-logs = LogService()
+async def main():
+    logs = LogService()
 
-# Selenium setup
-mainUrl = 'https://www.crockpotting.es/indice/'
-driverpath = './geckodriver.exe'
-s = Service(driverpath)
-driver = webdriver.Firefox(service=s)
-logs.sendInfo('Selenium has been set up')
+    # Selenium setup
+    mainUrl = 'https://www.crockpotting.es/indice/'
 
-# Settings to change the behaviour of the script
-with open('./AppConfig.json') as inputFile:
-    config = json.load(inputFile)
-    GET_URLS = config['GET_URLS']
-    CRAWL_ALL = config['CRAWL_ALL']
+    # Settings to change the behaviour of the script
+    with open('./AppConfig.json') as inputFile:
+        config = json.load(inputFile)
+        GET_URLS = config['GET_URLS']
+        CRAWL_ALL = config['CRAWL_ALL']
 
 
-###########################################
-#           Instantiate Classes           #
-###########################################
+    ###########################################
+    #           Instantiate Classes           #
+    ###########################################
 
-crawlService = CrawlService(mainUrl, logs)
-db = Database(dbPath = './db/tiny.json')
-
-
-###########################################
-#              Prepare crawl              #
-###########################################
-
-if (GET_URLS):
-    logs.sendInfo('Extracting URLs.')
-    recipeList = crawlService.getUrls(driver)
-    logs.sendInfo('Updating URL database.')
-    db.update(recipeList)
+    crawlService = CrawlService(mainUrl, logs)
+    db = Database(dbPath = './db/AsyncTiny.json')
 
 
-###########################################
-#              Execute crawl              #
-###########################################
+    ###########################################
+    #              Prepare crawl              #
+    ###########################################
 
-if (CRAWL_ALL):
-    preCrawledURLs = db.database.table('urls').all()
-    crawledURLs = []
-    counter = 0
-    for i in tqdm(range(len(preCrawledURLs))):
-        recipe = preCrawledURLs[i]
-        try:
-            recipeEnriched = crawlService.getData(driver, recipe) 
-            if not recipeEnriched:
-                continue
-        except selenium.common.exceptions.NoSuchElementException as e:
-            e = str(e).replace("\\n", ' ')
-            logs.sendWarning(f'Could not crawl given url: {e}.')
-            recipeEnriched = recipe    
-        recipeEnriched['crawled'] = True
-        crawledURLs.append(recipeEnriched)
 
-        time.sleep(1)
-        counter += 1
-        if counter % 20 == 0:
-            db.update(crawledURLs)
-            logs.sendInfo('Updating recipes database.')
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
+            
+        if (GET_URLS):
+            logs.sendInfo('Extracting URLs.')
+            task = asyncio.ensure_future(crawlService.getUrls(session))
+
+            recipeList = await asyncio.gather(task)
+
+            logs.sendInfo('Updating URL database.')
+            db.update(recipeList[0])
+        
+        if (CRAWL_ALL):
+            preCrawledURLs = db.database.table('urls').all()
+            #TinyDb does not support "column" selection
+            preCrawledURLs = [recipe['Link'] for recipe in preCrawledURLs]
             crawledURLs = []
-    db.update(crawledURLs)
-driver.close()
+            
+            tasks = [asyncio.ensure_future(crawlService.getData(session, url)) for url in preCrawledURLs]
+
+
+            recipesHTML = await asyncio.gather(*tasks)
+            
+
+
+            for recipe in tqdm(recipesHTML):
+                try:
+                    recipeEnriched = crawlService.processRecipePage(recipesHTML, recipe) 
+                    if not recipeEnriched:
+                        continue
+                except Exception as e:
+                    e = str(e).replace("\\n", ' ')
+                    logs.sendWarning(f'Could not crawl given url: {e}.')
+                    recipeEnriched = recipe    
+                recipeEnriched['crawled'] = True
+                crawledURLs.append(recipeEnriched)
+
+                time.sleep(1)
+                counter += 1
+                if counter % 20 == 0:
+                    db.update(crawledURLs)
+                    logs.sendInfo('Updating recipes database.')
+                    crawledURLs = []
+            db.update(crawledURLs)
+
+if __name__ == '__main__':
+    asyncio.run(main())
