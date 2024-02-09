@@ -20,13 +20,14 @@ class Database():
     def database(self) -> TinyDB:                
         return TinyDB(self.dbPath)
     
-    def update(self, recipeList) -> None:
-        urlTable = self.database.table('urls')
+    def update(self, recipeList, database: str = 'urls') -> None:
+        urlTable = self.database.table(database)
 
         # Insert only new recepies
         crawledURLs = [element['Link'] for element in urlTable.all() if element['crawled']]
+        recipeList = [recipe for recipe in recipeList if recipe != {}]
         
-        newRecipes = [recipe for recipe in recipeList if recipe['Link'] not in crawledURLs]
+        newRecipes = [recipe for recipe in recipeList if recipe['Link'] not in crawledURLs and recipe != {}]
         
         if newRecipes != []:
             try:

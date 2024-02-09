@@ -21,6 +21,7 @@ async def main():
         config = json.load(inputFile)
         GET_URLS = config['GET_URLS']
         CRAWL_ALL = config['CRAWL_ALL']
+        BATCH_SIZE = config['BATCH_SIZE']
 
 
     ###########################################
@@ -31,13 +32,14 @@ async def main():
     db = Database(dbPath = './db/AsyncTiny.json')
 
 
+
+
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False, limit = BATCH_SIZE, force_close=True)) as session:
+
     ###########################################
     #              Prepare crawl              #
     ###########################################
 
-
-    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
-            
         if (GET_URLS):
             logs.sendInfo('Extracting URLs.')
             task = asyncio.ensure_future(crawlService.getUrls(session))
@@ -51,34 +53,25 @@ async def main():
             preCrawledURLs = db.database.table('urls').all()
             #TinyDb does not support "column" selection
             preCrawledURLs = [recipe['Link'] for recipe in preCrawledURLs]
-            crawledURLs = []
             
-            tasks = [asyncio.ensure_future(crawlService.getData(session, url)) for url in preCrawledURLs]
-
-
-            recipesHTML = await asyncio.gather(*tasks)
-            
-
-
-            for recipe in tqdm(recipesHTML):
+            # Create small batches
+            progressBar = tqdm(len(preCrawledURLs))
+            crawledUrls = 0
+            while crawledUrls < len(preCrawledURLs):
                 try:
-                    recipeEnriched = crawlService.processRecipePage(recipesHTML, recipe) 
-                    if not recipeEnriched:
-                        continue
-                except Exception as e:
-                    e = str(e).replace("\\n", ' ')
-                    logs.sendWarning(f'Could not crawl given url: {e}.')
-                    recipeEnriched = recipe    
-                recipeEnriched['crawled'] = True
-                crawledURLs.append(recipeEnriched)
+                    urlsToCrawl = preCrawledURLs[crawledUrls:crawledUrls + BATCH_SIZE]
+                    preCrawledURLs = preCrawledURLs[crawledUrls + BATCH_SIZE:]
+                except IndexError:
+                    urlsToCrawl = preCrawledURLs
+                    
+                tasks = [asyncio.ensure_future(crawlService.getData(session, url)) for url in urlsToCrawl]
 
-                time.sleep(1)
-                counter += 1
-                if counter % 20 == 0:
-                    db.update(crawledURLs)
-                    logs.sendInfo('Updating recipes database.')
-                    crawledURLs = []
-            db.update(crawledURLs)
 
+                recipesList = await asyncio.gather(*tasks)
+                
+                logs.sendInfo('Updating database')
+                db.update(recipesList, database = 'recipes')
+                progressBar.update(BATCH_SIZE)
+            progressBar.close()
 if __name__ == '__main__':
     asyncio.run(main())

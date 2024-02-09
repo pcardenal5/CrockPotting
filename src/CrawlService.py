@@ -34,27 +34,24 @@ class CrawlService():
 
 
         recipes = []
-        for recipeColumn in recipeColumns:
-            recipeList = recipeColumn.find('ul')
-            
-            for recipe in recipeList.find_all_next('li'):
-                # Some elements may not have a link
+        for recipe in recipeColumns[0].find_all_next('li'):
+            # Some elements may not have a link
+            try:
+                recipeElement = recipe.find('a')
+                recipeName = recipeElement.text
+                
                 try:
-                    recipeElement = recipe.find('a')
-                    recipeName = recipeElement.text
+                    recipeLink = recipeElement['href']
                     
-                    try:
-                        recipeLink = recipeElement['href']
-                        
-                        
-                        if (not recipeLink.endswith('#azindex-1')):
-                            recipes.append({'Name' : recipeName, 'Link' : recipeLink, 'crawled' : False})
+                    
+                    if (not recipeLink.endswith('#azindex-1')):
+                        recipes.append({'Name' : recipeName, 'Link' : recipeLink, 'crawled' : False})
 
-                    except:
-                        self.logs.sendWarning(f'No link found for {recipeName}')
-                        
                 except:
-                    pass
+                    self.logs.sendWarning(f'No link found for {recipeName}')
+                    
+            except:
+                pass
       
         return recipes
 
@@ -62,36 +59,68 @@ class CrawlService():
         '''
         Asynchronously gets the text from a given page
         '''
-        async with session.get(url) as response:
-            recipeHTML = await response.text()
-            return BeautifulSoup(recipeHTML)
+        try:
+            async with session.get(url) as response:
+                recipeHTML = await response.text()
+                # Create recipe dict from scratch, no need for order
+                return self.processRecipePage(BeautifulSoup(recipeHTML, 'html.parser'), recipe = {'Link': url})
+        except aiohttp.client_exceptions.InvalidURL:
+            return {}
 
-    def processRecipePage(self, soup: BeautifulSoup, recipe:dict) -> dict:
+    def processRecipePage(self, soup: BeautifulSoup, recipe : dict) -> dict:
         '''
             Extracts the ingredients, productions and recommendations from a bs4 soup
         '''
+        # First, check if recipe has ingredients. If it doesn't, exit early
+        # Variable used later. I will only consider a recipe is crawled if it has ingredients
+        ingredientGroups = soup.find_all("div", class_ = 'wprm-recipe-ingredient-group')
+        if not ingredientGroups:
+            return {}
+        recipe['crawled'] = True
+
+        #########################################
+        #              Recipe Name              #
+        #########################################
+        try:
+            recipe['Name'] = soup.find(class_ = 'entry-title').text
+        except:
+            # It it has no name, return empty 
+            return {}
+        
         
         #########################################
         #     Cooking and elaboration times     #
         #########################################
         
         try:
+
             try:        
-                cookingTimeHours = soup.find("span", class_ = 'wprm-recipe-details wprm-recipe-details-hours wprm-recipe-total_time wprm-recipe-total_time-hours').text.replace('\n',' ')
+                cookingTimeDays = soup.find("span", class_ = 'wprm-recipe-details wprm-recipe-details-days wprm-recipe-cook_time wprm-recipe-cook_time-days').text.replace('\n',' ')
+            except:
+                cookingTimeDays = ''
+                
+            try:        
+                cookingTimeHours = soup.find("span", class_ = 'wprm-recipe-details wprm-recipe-details-hours wprm-recipe-cook_time wprm-recipe-cook_time-hours').text.replace('\n',' ')
             except:
                 cookingTimeHours = ''
 
             try:        
-                cookingTimeMinutes = soup.find("span", class_ = 'wprm-recipe-details wprm-recipe-details-minutes wprm-recipe-total_time wprm-recipe-total_time-minutes').text.replace('\n',' ')
+                cookingTimeMinutes = soup.find("span", class_ = 'wprm-recipe-details wprm-recipe-details-minutes wprm-recipe-cook_time wprm-recipe-cook_time-minutes').text.replace('\n',' ')
             except:
                 cookingTimeMinutes = ''
                 
-            recipe['CookingTime'] = f'{cookingTimeHours} {cookingTimeMinutes}'
+            recipe['CookingTime'] = f'{cookingTimeDays} {cookingTimeHours} {cookingTimeMinutes}'.strip()
         
         except:
             recipe['CookingTime'] = ''
-            
+        
+        
         try:
+            try:        
+                preparationTimeDays = soup.find("span", class_ = 'wprm-recipe-details wprm-recipe-details-days wprm-recipe-prep_time wprm-recipe-prep_time-days').text.replace('\n',' ')
+            except:
+                preparationTimeDays = ''
+
             try:        
                 preparationTimeHours = soup.find("span", class_ = 'wprm-recipe-details wprm-recipe-details-hours wprm-recipe-prep_time wprm-recipe-prep_time-hours').text.replace('\n',' ')
             except:
@@ -102,17 +131,18 @@ class CrawlService():
             except:
                 preparationTimeMinutes = ''
                 
-            recipe['PreparationTime'] = f'{preparationTimeHours} {preparationTimeMinutes}'
+            recipe['PreparationTime'] = f'{preparationTimeDays} {preparationTimeHours} {preparationTimeMinutes}'.strip()
         
         except:
             recipe['PreparationTime'] = ''
+
         #########################################
         #              Ingredients              #
         #########################################
         
         Ingredients = {}
         # First one must loop over all the different groups
-        for ingredientGroup in soup.find("div", class_ = 'wprm-recipe-ingredient-group'):
+        for ingredientGroup in ingredientGroups:
             
             try:
                 # If there is more than one group, here we get its title
@@ -124,29 +154,35 @@ class CrawlService():
             # Then we can get all the different ingredients
             # Each one will be one element of a list[dict]
             ingredientList = []
-            for ingredient in ingredientGroup.find_all_next('li'):
+            for ingredient in ingredientGroup.find_all_next('li',recursive=False):
                 ingredientDict = {}
+                try:
+                    ingredientDict['name'] = ingredient.find(class_ = 'wprm-recipe-ingredient-name').text
+                except:
+                    pass
                 
-                ingredientDict['name'] = ingredient.find_next(class_ = 'wprm-recipe-ingredient-name').text
-
+                
                 # Sometimes there is no amount 
                 try:
-                    ingredientDict['amount'] = ingredient.find_next(class_ = 'wprm-recipe-ingredient-amount').text
+                    ingredientDict['amount'] = ingredient.find(class_ = 'wprm-recipe-ingredient-amount').text
                 except:
                     pass
                 
                 # Sometimes there are no units (1 clove of garlic)
                 try:
-                    ingredientDict['unit'] = ingredient.find_next(class_ = 'wprm-recipe-ingredient-unit').text
+                    ingredientDict['unit'] = ingredient.find(class_ = 'wprm-recipe-ingredient-unit').text
                 except:
                     pass
 
                 # Sometimes there are notes
                 try:
-                    ingredientDict['notes'] = ingredient.find_next(class_ = 'wprm-recipe-ingredient-notes wprm-recipe-ingredient-notes-normal').text
+                    ingredientDict['notes'] = ingredient.find(class_ = 'wprm-recipe-ingredient-notes wprm-recipe-ingredient-notes-normal').text
                 except:
                     pass
                 
+                # The find all next also detects li elements we don't really want
+                if ingredientDict == {}:
+                    break
                 
                 
                 ingredientList.append(ingredientDict)
@@ -173,7 +209,7 @@ class CrawlService():
                 title = 'Elaboración'
 
             stepList = []
-            for step in stepGroup.find_all_next('li'):
+            for step in stepGroup.find_all_next('li', recursive=False):
                 try:
                     step = step.find(class_ = 'wprm-recipe-instruction-text').text
                     stepList.append(step)

@@ -20,8 +20,8 @@ OUTPUT_PATH = config['OUTPUT_PATH']
 if not os.path.exists(OUTPUT_PATH):
     os.makedirs(OUTPUT_PATH)
 
-db = Database()
-recipeDb = db.database.table('urls').all()
+db = Database(dbPath = './db/AsyncTiny.json')
+recipeDb = db.database.table('recipes').all()
 
 
 # Loop through all the recipes 
@@ -35,7 +35,8 @@ for i in tqdm(range(len(recipeDb))):
 ---
 ## Información básica
 - Enlace a la receta original: {recipe["Link"]}
-- Tiempo total de elaboración y cocinado: {recipe["Time"]}
+- Tiempo de preparación: {recipe["PreparationTime"]}
+- Tiempo de cocinado: {recipe["CookingTime"]}
 ---
 ## Ingredientes
 '''
@@ -58,7 +59,7 @@ for i in tqdm(range(len(recipeDb))):
             iNotes = ingredient.get('notes')
             ingredientsText += f'- {iAmount} {iUnit} {iName} ({iNotes})\n'
         # There may be a fancier way to do this with regex, but couldn't get it to work
-        ingredientsText = ingredientsText.replace('None', '').replace('  ', ' ').replace('  ', ' ').replace('()','')
+        ingredientsText = ingredientsText.replace('None', '').replace('  ', ' ').replace('  ', ' ').replace('()','').replace('((', '(').replace('))', ')')
 
     # Add ingredient list
     recipeMarkdown += ingredientsText
