@@ -3,20 +3,20 @@
 ## Setting up
 
 This project has been done using Python 3.10.11 and `pipenv` as an environment manager. In order to get everything running one must install pipenv
-```
+```bash
     pip3 install pipenv
 ``` 
-and then create the virtual environment. The following command must be executed on the same folder as the `Pipfile` and `Pipfile.lock` files:
-```
+and then create the virtual environment. To do that, the following command must be executed on the same folder as the `Pipfile` and `Pipfile.lock` files:
+```bash
     pipenv sync
 ```
 Finally, once everything has been downloaded and installed one can simply execute
-```
+```bash
     pipenv run python main.py
 ```
 ## Goals
 
-The aim of this project is to extract all the existing recepies of a given website, https://crockpotting.es. This will be done using `selenium` to crawl and extract the data, and `tinyDb` to store the information.
+The aim of this project is to extract all the existing recepies of a given website, https://crockpotting.es. This will be done using `asyncio` and `aiohttp` to get the html text, `bs4` to parse and extarct the data, and `tinyDb` to store the information.
 
 ## Database
 
@@ -24,7 +24,6 @@ I will be extracting and storing the following information from every recipe lin
 
 - Name
 - Url
-- Servings
 - Time
 - Ingredients
 - Steps
@@ -36,16 +35,16 @@ TinyDb uses JSON files to store the data. Using the previous list, each element 
 {
     "Name": "recipeName",
     "Link": "recipeLink",
-    "Servings" : 0,
-    "Time": "recipeTime",
+    "CookingTime": "CookingTime",
+    "PreparationTime": "PreparationTime",
     "Ingredients": {
         "ingredientGroupName1" : [
-            {"Name" : "ingredientName", "Amount": 0, "Units": "ingredientUnits"}
-            {"Name" : "ingredientName", "Amount": 0, "Units": "ingredientUnits"}
+            {"name" : "ingredientName", "amount": 0, "unit": "ingredientUnits", "notes": "ingredientNotes"}
+            {"name" : "ingredientName", "amount": 0, "unit": "ingredientUnits", "notes": "ingredientNotes"}
         ],
         "ingredientGroupName2" : [
-            {"Name" : "ingredientName", "Amount": 0, "Units": "ingredientUnits"}
-            {"Name" : "ingredientName", "Amount": 0, "Units": "ingredientUnits"}
+            {"name" : "ingredientName", "amount": 0, "unit": "ingredientUnits", "notes": "ingredientNotes"}
+            {"name" : "ingredientName", "amount": 0, "unit": "ingredientUnits", "notes": "ingredientNotes"}
         ]
     },
     "Steps" : {
@@ -55,9 +54,3 @@ TinyDb uses JSON files to store the data. Using the previous list, each element 
     "Recommendations": "Recommendations"
 }
 ```
-
-## Todo list
-
-There are many things to optimize or try in this project:
-
-- Try the `asyncio` library. The use of the library could massively speed up the process.
