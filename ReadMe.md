@@ -10,10 +10,26 @@ and then create the virtual environment. To do that, the following command must 
 ```bash
     pipenv sync
 ```
-Finally, once everything has been downloaded and installed one can simply execute
+
+Before running anythin, change the global settings using the `AppConfig.json` file:
+
+- `GET_URLS` : Boolean, indicates whether or not to get all the URLS in the index page. Set to `true` on the first execution.
+- `CRAWL_ALL` :  Boolean, indicates whether or not to extract the recipes from the crawled URLs.
+- `BATCH_SIZE` : Ineteger, sets the size for the `aiohttp` Client Session. 
+- `OUTPUT_PATH` : String, path to the folder where you want to store the recipes in Markdown format. 
+
+## Execution
+
+Finally, to crawl the recipes run
 ```bash
     pipenv run python main.py
 ```
+
+Then, if you want to save the recipes as Markdown files (I have used [Obsidian](https://obsidian.md/) to index and displaying them), run
+```bash
+    pipenv run python ToMarkdown.py
+```
+
 ## Goals
 
 The aim of this project is to extract all the existing recepies of a given website, https://crockpotting.es. This will be done using `asyncio` and `aiohttp` to get the html text, `bs4` to parse and extarct the data, and `tinyDb` to store the information.
