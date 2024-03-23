@@ -24,13 +24,13 @@ db = Database(dbPath = './db/AsyncTiny.json')
 recipeDb = db.database.table('recipes').all()
 
 
-# Loop through all the recipes 
+# Loop through all the recipes
 for i in tqdm(range(len(recipeDb))):
     recipe = recipeDb[i]
-    # I will first build the text to write into the file and only then I will write it 
+    # I will first build the text to write into the file and only then I will write it
     recipeMarkdown = ''
-    
-    # Set recipe headers    
+
+    # Set recipe headers
     recipeMarkdown += f'''# {recipe["Name"]}
 ---
 ## Información básica
@@ -48,7 +48,7 @@ for i in tqdm(range(len(recipeDb))):
     ingredientsText = ''
     for ingredientName in recipeIngredients.keys():
         ingredientGroup = recipeIngredients[ingredientName]
-        
+
         if ingredientName != 'Ingredientes':
             ingredientsText += f'### {ingredientName}\n'
         # ingredientGroup is an array of ingredients
@@ -64,13 +64,13 @@ for i in tqdm(range(len(recipeDb))):
     # Add ingredient list
     recipeMarkdown += ingredientsText
 
-    # Add Steps 
+    # Add Steps
     recipeMarkdown += '---\n## Elaboración\n'
     recipeSteps = dict(recipe["Steps"])
     stepsText = ''
     for stepName in recipeSteps.keys():
         stepGroup = recipeSteps[stepName]
-        
+
         if stepName != 'Elaboración':
             stepsText += f'### {stepName}\n'
         # stepGroup is an array of Steps. Loop ober them and add to string

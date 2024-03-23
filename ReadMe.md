@@ -5,7 +5,7 @@
 This project has been done using Python 3.10.11 and `pipenv` as an environment manager. In order to get everything running one must install pipenv
 ```bash
     pip3 install pipenv
-``` 
+```
 and then create the virtual environment. To do that, the following command must be executed on the same folder as the `Pipfile` and `Pipfile.lock` files:
 ```bash
     pipenv sync
@@ -15,8 +15,8 @@ Before running anythin, change the global settings using the `AppConfig.json` fi
 
 - `GET_URLS` : Boolean, indicates whether or not to get all the URLS in the index page. Set to `true` on the first execution.
 - `CRAWL_ALL` :  Boolean, indicates whether or not to extract the recipes from the crawled URLs.
-- `BATCH_SIZE` : Ineteger, sets the size for the `aiohttp` Client Session. 
-- `OUTPUT_PATH` : String, path to the folder where you want to store the recipes in Markdown format. 
+- `BATCH_SIZE` : Ineteger, sets the size for the `aiohttp` Client Session.
+- `OUTPUT_PATH` : String, path to the folder where you want to store the recipes in Markdown format.
 
 ## Execution
 
