@@ -5,9 +5,6 @@ import aiohttp
 # Logging
 from src.LogService import LogService
 
-# Utils
-import time
-
 class CrawlService():
 
     def __init__(self, mainUrl: str, logs: LogService) -> None:

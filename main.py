@@ -7,7 +7,6 @@ from src.DatabaseService import Database
 from src.LogService import LogService
 
 from tqdm import tqdm
-import time
 import json
 
 async def main():
