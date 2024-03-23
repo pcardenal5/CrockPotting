@@ -36,7 +36,7 @@ class CrawlService():
                     
                     
                     if (not recipeLink.endswith('#azindex-1')):
-                        recipes.append({'Name' : recipeName, 'Link' : recipeLink, 'crawled' : False})
+                        recipes.append({'Name' : recipeName, 'Link' : recipeLink})
 
                 except:
                     self.logs.sendWarning(f'No link found for {recipeName}')
@@ -67,7 +67,6 @@ class CrawlService():
         ingredientGroups = soup.find_all("div", class_ = 'wprm-recipe-ingredient-group')
         if not ingredientGroups:
             return {}
-        recipe['crawled'] = True
 
         #########################################
         #              Recipe Name              #

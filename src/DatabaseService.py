@@ -20,10 +20,10 @@ class Database():
     def database(self) -> TinyDB:
         return TinyDB(self.dbPath)
 
-    def upsert(self, recipeList) -> None:
-        urlTable = self.database.table('urls')
+    def upsert(self, recipeList, collection : str) -> None:
+        recipeColletion = self.database.table(collection)
 
         recipeList = [recipe for recipe in recipeList if recipe != {}]
 
         for recipe in recipeList:
-            urlTable.upsert(recipe, Query().Link == recipe['Link'])
+            recipeColletion.upsert(recipe, Query().Link == recipe['Link'])

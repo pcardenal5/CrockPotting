@@ -18,10 +18,8 @@ async def main():
     # Settings to change the behaviour of the script
     with open('./AppConfig.json') as inputFile:
         config = json.load(inputFile)
-        GET_URLS = config['GET_URLS']
-        CRAWL_ALL = config['CRAWL_ALL']
         BATCH_SIZE = config['BATCH_SIZE']
-
+        COLLECTION = config['COLLECTION']
 
     ###########################################
     #           Instantiate Classes           #
@@ -39,38 +37,36 @@ async def main():
     #              Prepare crawl              #
     ###########################################
 
-        if (GET_URLS):
-            logs.sendInfo('Extracting URLs.')
-            task = asyncio.ensure_future(crawlService.getUrls(session))
+        logs.sendInfo('Extracting URLs.')
+        task = asyncio.ensure_future(crawlService.getUrls(session))
 
-            recipeList = await asyncio.gather(task)
+        recipeList = await asyncio.gather(task)
 
-            logs.sendInfo('Updating URL database.')
-            db.upsert(recipeList[0])
+        logs.sendInfo('Updating URL database.')
+        db.upsert(recipeList[0], COLLECTION)
 
-        if (CRAWL_ALL):
-            preCrawledURLs = db.database.table('urls').all()
-            #TinyDb does not support "column" selection
-            preCrawledURLs = [recipe['Link'] for recipe in preCrawledURLs]
+        preCrawledURLs = db.database.table(COLLECTION).all()
+        #TinyDb does not support "column" selection
+        preCrawledURLs = [recipe['Link'] for recipe in preCrawledURLs]
 
-            # Create small batches
-            progressBar = tqdm(total = len(preCrawledURLs))
-            crawledUrls = 0
-            while crawledUrls < len(preCrawledURLs):
-                try:
-                    urlsToCrawl = preCrawledURLs[crawledUrls:crawledUrls + BATCH_SIZE]
-                    preCrawledURLs = preCrawledURLs[crawledUrls + BATCH_SIZE:]
-                except IndexError:
-                    urlsToCrawl = preCrawledURLs
+        # Create small batches
+        progressBar = tqdm(total = len(preCrawledURLs))
+        crawledUrls = 0
+        while crawledUrls < len(preCrawledURLs):
+            try:
+                urlsToCrawl = preCrawledURLs[crawledUrls:crawledUrls + BATCH_SIZE]
+                preCrawledURLs = preCrawledURLs[crawledUrls + BATCH_SIZE:]
+            except IndexError:
+                urlsToCrawl = preCrawledURLs
 
-                tasks = [asyncio.ensure_future(crawlService.getData(session, url)) for url in urlsToCrawl]
+            tasks = [asyncio.ensure_future(crawlService.getData(session, url)) for url in urlsToCrawl]
 
 
-                recipesList = await asyncio.gather(*tasks)
+            recipesList = await asyncio.gather(*tasks)
 
-                logs.sendInfo('Updating database')
-                db.upsert(recipesList)
-                progressBar.update(len(recipesList))
-            progressBar.close()
+            logs.sendInfo('Updating database')
+            db.upsert(recipesList, COLLECTION)
+            progressBar.update(len(recipesList))
+        progressBar.close()
 if __name__ == '__main__':
     asyncio.run(main())

@@ -1,6 +1,5 @@
 {
-    "GET_URLS": true,
-    "CRAWL_ALL": true,
-    "BATCH_SIZE": 50,
-    "OUTPUT_PATH" : "D:/OneDrive/Documentos/Obsidian/Recetas/CrockPotting/"
+    "BATCH_SIZE": 100,
+    "OUTPUT_PATH" : "/data/CrockPotting/result",
+    "COLLECTION" : "Recipes"
 }
