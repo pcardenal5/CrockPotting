@@ -47,15 +47,15 @@ async def main():
             recipeList = await asyncio.gather(task)
 
             logs.sendInfo('Updating URL database.')
-            db.update(recipeList[0])
-        
+            db.upsert(recipeList[0])
+
         if (CRAWL_ALL):
             preCrawledURLs = db.database.table('urls').all()
             #TinyDb does not support "column" selection
             preCrawledURLs = [recipe['Link'] for recipe in preCrawledURLs]
-            
+
             # Create small batches
-            progressBar = tqdm(len(preCrawledURLs))
+            progressBar = tqdm(total = len(preCrawledURLs))
             crawledUrls = 0
             while crawledUrls < len(preCrawledURLs):
                 try:
@@ -63,15 +63,15 @@ async def main():
                     preCrawledURLs = preCrawledURLs[crawledUrls + BATCH_SIZE:]
                 except IndexError:
                     urlsToCrawl = preCrawledURLs
-                    
+
                 tasks = [asyncio.ensure_future(crawlService.getData(session, url)) for url in urlsToCrawl]
 
 
                 recipesList = await asyncio.gather(*tasks)
-                
+
                 logs.sendInfo('Updating database')
-                db.update(recipesList, database = 'recipes')
-                progressBar.update(BATCH_SIZE)
+                db.upsert(recipesList)
+                progressBar.update(len(recipesList))
             progressBar.close()
 if __name__ == '__main__':
     asyncio.run(main())
