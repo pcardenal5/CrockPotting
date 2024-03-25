@@ -21,7 +21,7 @@ if not os.path.exists(OUTPUT_PATH):
     os.makedirs(OUTPUT_PATH)
 
 db = Database(dbPath = './db/AsyncTiny.json')
-recipeDb = db.database.table('recipes').all()
+recipeDb = db.database.table('Recipes').all()
 
 
 # Loop through all the recipes
@@ -29,17 +29,24 @@ for i in tqdm(range(len(recipeDb))):
     recipe = recipeDb[i]
     # I will first build the text to write into the file and only then I will write it
     recipeMarkdown = ''
+    
+    try:
+        # Set recipe headers
+        recipeMarkdown += f'''# {recipe["Name"]}
 
-    # Set recipe headers
-    recipeMarkdown += f'''# {recipe["Name"]}
 ---
+
 ## Información básica
 - Enlace a la receta original: {recipe["Link"]}
 - Tiempo de preparación: {recipe["PreparationTime"]}
 - Tiempo de cocinado: {recipe["CookingTime"]}
+
 ---
+
 ## Ingredientes
 '''
+    except:
+        continue
     recipeIngredients = dict(recipe["Ingredients"])
     # Skip iteration if there are no ingredients.
     # That way I delete the links without recipes
@@ -65,7 +72,7 @@ for i in tqdm(range(len(recipeDb))):
     recipeMarkdown += ingredientsText
 
     # Add Steps
-    recipeMarkdown += '---\n## Elaboración\n'
+    recipeMarkdown += '\n---\n\n## Elaboración\n'
     recipeSteps = dict(recipe["Steps"])
     stepsText = ''
     for stepName in recipeSteps.keys():
@@ -82,7 +89,7 @@ for i in tqdm(range(len(recipeDb))):
     recipeMarkdown += stepsText
 
     # Include notes
-    recipeMarkdown +=f'---\n## Recomendaciones\n{recipe.get("Recommendations")}'
+    recipeMarkdown +=f'\n---\n\n## Recomendaciones\n{recipe.get("Recommendations")}'
 
     # Remove special characters from the name and save the file
     rName = re.sub(r'\||\?|¿', '', recipe['Name'])
